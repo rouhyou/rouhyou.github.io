@@ -1,0 +1,134 @@
+import pygame
+import sys
+import numpy as np
+
+# Initialize pygame
+pygame.init()
+
+# Constants
+BOARD_SIZE = 19  # Standard Go board size is 19x19
+GRID_SIZE = 30
+STONE_RADIUS = 13
+MARGIN = 40
+WINDOW_SIZE = BOARD_SIZE * GRID_SIZE + 2 * MARGIN
+BOARD_COLOR = (220, 179, 92)
+LINE_COLOR = (0, 0, 0)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+
+# Create the game window
+screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
+pygame.display.set_caption('Go Game')
+
+# Game state
+board = np.zeros((BOARD_SIZE, BOARD_SIZE), dtype=int)  # 0: empty, 1: black, 2: white
+current_player = 1  # 1 for black, 2 for white
+
+# Load stone images or use circles
+# For simplicity, we'll use pygame's drawing functions
+
+def draw_board():
+    # Fill the background
+    screen.fill(BOARD_COLOR)
+    
+    # Draw the grid lines
+    for i in range(BOARD_SIZE):
+        # Vertical lines
+        pygame.draw.line(screen, LINE_COLOR,
+                        (MARGIN + i * GRID_SIZE, MARGIN),
+                        (MARGIN + i * GRID_SIZE, WINDOW_SIZE - MARGIN), 1)
+        # Horizontal lines
+        pygame.draw.line(screen, LINE_COLOR,
+                        (MARGIN, MARGIN + i * GRID_SIZE),
+                        (WINDOW_SIZE - MARGIN, MARGIN + i * GRID_SIZE), 1)
+    
+    # Draw star points (hoshi)
+    star_points = [3, 9, 15]  # For 19x19 board
+    for i in star_points:
+        for j in star_points:
+            pygame.draw.circle(screen, BLACK, 
+                             (MARGIN + i * GRID_SIZE, MARGIN + j * GRID_SIZE), 4)
+
+def draw_stones():
+    for i in range(BOARD_SIZE):
+        for j in range(BOARD_SIZE):
+            if board[i][j] == 1:  # Black stone
+                pygame.draw.circle(screen, BLACK,
+                                 (MARGIN + i * GRID_SIZE, MARGIN + j * GRID_SIZE),
+                                 STONE_RADIUS)
+            elif board[i][j] == 2:  # White stone
+                pygame.draw.circle(screen, WHITE,
+                                 (MARGIN + i * GRID_SIZE, MARGIN + j * GRID_SIZE),
+                                 STONE_RADIUS)
+                pygame.draw.circle(screen, BLACK,
+                                 (MARGIN + i * GRID_SIZE, MARGIN + j * GRID_SIZE),
+                                 STONE_RADIUS, 1)  # Outline for white stones
+
+def get_board_position(mouse_pos):
+    x, y = mouse_pos
+    # Convert screen coordinates to board coordinates
+    board_x = round((x - MARGIN) / GRID_SIZE)
+    board_y = round((y - MARGIN) / GRID_SIZE)
+    
+    # Check if the position is on the board
+    if 0 <= board_x < BOARD_SIZE and 0 <= board_y < BOARD_SIZE:
+        return board_x, board_y
+    return None
+
+def is_valid_move(x, y, player):
+    # Check if the position is empty
+    if board[x][y] != 0:
+        return False
+    
+    # TODO: Add Go rules (ko, suicide, capture)
+    # For now, just check if the position is empty
+    return True
+
+def make_move(x, y, player):
+    if is_valid_move(x, y, player):
+        board[x][y] = player
+        return True
+    return False
+
+def switch_player():
+    global current_player
+    current_player = 3 - current_player  # Toggle between 1 and 2
+
+def main():
+    global current_player
+    
+    # Main game loop
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    pos = pygame.mouse.get_pos()
+                    board_pos = get_board_position(pos)
+                    if board_pos:
+                        x, y = board_pos
+                        if make_move(x, y, current_player):
+                            switch_player()
+        
+        # Draw everything
+        draw_board()
+        draw_stones()
+        
+        # Draw current player indicator
+        font = pygame.font.Font(None, 36)
+        player_text = f"Current: {'Black' if current_player == 1 else 'White'}"
+        text_surface = font.render(player_text, True, BLACK)
+        screen.blit(text_surface, (10, 10))
+        
+        # Update the display
+        pygame.display.flip()
+    
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()
